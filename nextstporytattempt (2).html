@@ -1103,10 +1103,19 @@ viz.simulation.on("tick", ()=>{
         detailPanel.attr('hidden', null);
         detailTitle.text(d.id);
 
-        const content = `<strong>Goal:</strong> ${d.goal}<br>
-                         <strong>Lane:</strong> ${d.lane}<br>
-                         <strong>Phase:</strong> ${d.phaseIndex + 1}`;
-        detailContent.html(content);
+        // Clear previous content
+        detailContent.html('');
+        // Add Goal
+        detailContent.append('strong').text('Goal:');
+        detailContent.append('span').text(' ' + d.goal);
+        detailContent.append('br');
+        // Add Lane
+        detailContent.append('strong').text('Lane:');
+        detailContent.append('span').text(' ' + d.lane);
+        detailContent.append('br');
+        // Add Phase
+        detailContent.append('strong').text('Phase:');
+        detailContent.append('span').text(' ' + (d.phaseIndex + 1));
       }
 
       function startGoalWaves() {
