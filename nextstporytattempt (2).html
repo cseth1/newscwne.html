@@ -1067,19 +1067,23 @@ viz.simulation.on("tick", ()=>{
         const laneLinks = viz.link.filter(d => d.type === 'lane').data();
         const linksByLane = d3.group(laneLinks, d => d.lane);
 
+        const allLinks = viz.link.data();
         let baseDelay = 0;
         for (const [laneName, links] of linksByLane.entries()) {
             links.sort((a, b) => a.source.phaseIndex - b.source.phaseIndex);
             links.forEach((link, i) => {
-                registerTimer('lifecycle', d3.timeout(() => {
-                    d3.select(viz.link.nodes()[link.index])
-                        .transition("flow").duration(250)
-                        .style('stroke-width', '3.5px')
-                        .style('stroke-opacity', 0.95)
-                        .transition("flow-fade").duration(400)
-                        .style('stroke-width', '1.5px')
-                        .style('stroke-opacity', d => d.type === "bridge" ? 0.25 : 0.5);
-                }, baseDelay + i * 200));
+                const nodeIndex = allLinks.indexOf(link);
+                if (nodeIndex !== -1) {
+                    registerTimer('lifecycle', d3.timeout(() => {
+                        d3.select(viz.link.nodes()[nodeIndex])
+                            .transition("flow").duration(250)
+                            .style('stroke-width', '3.5px')
+                            .style('stroke-opacity', 0.95)
+                            .transition("flow-fade").duration(400)
+                            .style('stroke-width', '1.5px')
+                            .style('stroke-opacity', d => d.type === "bridge" ? 0.25 : 0.5);
+                    }, baseDelay + i * 200));
+                }
             });
             baseDelay += (links.length + 2) * 200;
         }
