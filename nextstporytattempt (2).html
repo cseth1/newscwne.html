@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>HROE: From Chaos to Clarity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+      :root{
+        --color-ahr:#4dabf7;
+        --color-wdp:#69db7c;
+        --color-eee:#ffc078;
+        --color-oe:#da77f2;
+        --color-muted:#495057;
+        --color-bg:#030611;
+        --color-bg-alt:#0a1020;
+        --color-maroon:#500000;
+        --color-link:rgba(255,255,255,.2);
+        --color-glow:rgba(255,255,255,.7);
+        --color-text:#e9ecef;
+        --color-text-muted:#ced4da;
+        --color-blueprint-grid:rgba(80,0,0,.30);
+        --shadow-soft: 0 4px 12px rgba(0,0,0,.3);
+        --shadow-glow: 0 0 20px rgba(255,255,255,.1);
+        --color-4c-compliance:#6ea8fe;   /* shield/standards */
+        --color-4c-improve:#51cf66;      /* kaizen/wrench */
+        --color-4c-culture:#ffd43b;      /* values/heart */
+        --color-4c-change:#b197fc;       /* transformation/delta */
+      }
+
+      /* Narrative/Labels toggle is styled as a .nav-button inside #story-navigation */
+
+      /* When narrative is off, hide overlay only (labels remain visible) */
+      body.narrative-off #narrative-overlay{ opacity:0 !important; pointer-events:none; }
+      *{margin:0;padding:0;box-sizing:border-box}
+      html, body {
+        height: 100%;
+        width: 100%;
+      }
+      body{
+        font-family:"Inter", -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        background-color: var(--color-bg);
+        background: radial-gradient(ellipse at 50% 20%, rgba(77,171,247,.15), transparent 50%),
+                    radial-gradient(ellipse at 80% 80%, rgba(218,119,242,.1), transparent 50%),
+                    radial-gradient(ellipse at 20% 80%, rgba(105,219,124,.1), transparent 50%),
+                    linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+        overflow:hidden;
+        color:var(--color-text);
+        line-height:1.6;
+        backdrop-filter: blur(1px);
+      }
+      #visualization{
+        position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;cursor:grab;
+        display: block; /* Ensure it's a block-level element */
+      }
+      #visualization:active{cursor:grabbing;}
+      .node{cursor:pointer}
+      .node circle.core{
+        stroke:var(--color-glow);stroke-width:.5px;
+        transition:r .8s ease-out,filter .5s ease-out,fill 1.2s ease;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+      }
+      .node text{
+        fill:#fff;font-size:16px;font-weight:500;text-anchor:middle;pointer-events:none;
+        paint-order:stroke;stroke:rgba(0,0,0,.8);stroke-width:4px;stroke-linejoin:round;opacity:1;
+        transition:opacity 1.2s ease-out,font-size 1.2s ease-out;
+        text-shadow: 0 1px 2px rgba(0,0,0,.8);
+      }
+      .node.root circle.core{stroke-width:1.5px;stroke:#ffd700}
+      .link{stroke:var(--color-link);stroke-width:1.5px}
+      .pulse-particle{stroke-width:0}
+      .blueprint-grid line{
+        stroke:var(--color-blueprint-grid);stroke-width:1px;stroke-dasharray:4 4;
+      }
+      /* Directed dependency flow (Anchors only) */
+      @keyframes flowDir{from{stroke-dashoffset:0}to{stroke-dashoffset:-28}}
+      .link.directed{stroke-dasharray:6 8;animation:flowDir 2.2s linear infinite}
+      #story-container{
+        position:relative;margin:8vh auto 0; width:90%;max-width:750px;
+        background:rgba(10,15,24,.8);border-radius:20px;padding:50px 60px;text-align:center;z-index:200;
+        border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(15px);
+        box-shadow: var(--shadow-soft), var(--shadow-glow);
+      }
+      #story-container h1{font-family:"Merriweather",serif;font-size:3.5rem;margin-bottom:25px;font-weight:900;letter-spacing:.5px;text-shadow: var(--shadow-glow);}
+      #story-container p{font-size:1.3rem;line-height:1.8;margin-bottom:35px;min-height:100px;color:var(--color-text-muted);text-shadow: 0 1px 4px rgba(0,0,0,.5);}
+      .story-button{
+        /* Use a gradient from a lighter maroon/red to the dark maroon defined in your variables */
+        background:linear-gradient(135deg, #8c1e1e, var(--color-maroon));color:#fff;border:none;
+        padding:18px 40px;font-size:1.2rem;font-weight:600;border-radius:50px;cursor:pointer;transition:all .4s ease;
+        box-shadow: var(--shadow-soft);text-shadow: 0 1px 2px rgba(0,0,0,.5);
+      }
+      .story-button:hover{transform:translateY(-4px);box-shadow: 0 8px 25px rgba(0,0,0,.4);}
+      #story-navigation{
+        position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+        background:rgba(10,15,24,.7);padding:10px 15px;border-radius:50px;display:flex;align-items:center;gap:15px;z-index:100;
+        border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(5px);
+        opacity:0;visibility:hidden;transition:opacity .5s ease-in-out,visibility .5s ease-in-out;
+      }
+      .nav-button{
+        background:transparent;color:#fff;border:none;padding:8px 16px;cursor:pointer;font-size:.9rem;font-weight:500;
+        transition:background-color .3s ease;border-radius:30px;white-space:nowrap;
+      }
+      .nav-button:hover:not(:disabled){background-color:rgba(255,255,255,.1)}
+      .nav-button:disabled{opacity:.4;cursor:not-allowed}
+      .progress-dots{display:flex;gap:10px}
+      .dot{width:8px;height:8px;background-color:rgba(255,255,255,.3);border-radius:50%;transition:background-color .3s ease}
+      .dot.active{background-color:#fff}
+
+      /* Narrative overlay */
+      #narrative-overlay{
+        position:absolute;top:5vh;left:50%;transform:translateX(-50%);
+        width:92%;max-width:980px;text-align:center;z-index:300;pointer-events:none;
+        background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15));
+        padding:15px 20px;border-radius:15px;backdrop-filter:blur(5px);
+        box-shadow: var(--shadow-soft);
+        opacity:0;
+        transition:opacity .5s ease-in-out;
+      }
+      #narrative-overlay .narrative-title{font-family:"Merriweather",serif;font-size:2.8rem;font-weight:900;margin-bottom:.5rem;text-shadow:0 3px 20px rgba(0,0,0,.6);letter-spacing:.5px;}
+      #narrative-overlay .narrative-subtitle{font-size:1.3rem;color:var(--color-text-muted);max-width:900px;margin:0 auto;text-shadow:0 2px 12px rgba(0,0,0,.4);line-height:1.6;}
+
+      /* Density mode for busy scenes to improve legibility */
+      body.dense-anim #narrative-overlay{background:linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.36)); box-shadow:0 8px 40px rgba(0,0,0,.35)}
+      body.dense-anim #detail-panel{background:rgba(10,15,24,.92); border-color:rgba(255,255,255,.22); box-shadow:0 8px 40px rgba(0,0,0,.5)}
+
+      /* Explore mode styling */
+      .faded{opacity:.15;filter:grayscale(.2)}
+      .link.emphasized{stroke:#fff;stroke-opacity:.85;stroke-width:2.5px}
+
+      /* Detail panel */
+      #detail-panel{
+        position:absolute;right:24px;top:24px;max-width:380px;z-index:350;
+        background:rgba(10,15,24,.9);border:1px solid rgba(255,255,255,.2);
+        border-radius:15px;padding:20px 20px 16px 20px;backdrop-filter:blur(8px);
+        box-shadow: var(--shadow-soft);
+      }
+      #detail-panel[hidden]{display:none}
+      #detail-panel .detail-title{font-weight:700;margin:0 0 .25rem 0}
+      #detail-panel .detail-content{font-size:1rem;color:var(--color-text-muted)}
+      #detail-panel .close-detail{position:absolute;top:6px;right:8px;background:transparent;border:none;color:#fff;font-size:1.2rem;cursor:pointer}
+
+      /* Accent behind Blueprint */
+      .blueprint-accent{mix-blend-mode:screen;opacity:.25}
+
+      /* Extra nav visuals */
+      .controls-sep{width:1px;height:18px;background:rgba(255,255,255,.2)}
+      .nav-button.primary{background:rgba(255,255,255,.1);}
+
+      /* High-contrast toggle */
+      body.high-contrast{--color-bg: #000; --color-text:#fff; --color-text-muted:#f0f0f0; --color-blueprint-grid:rgba(150,200,255,.6); --color-link:rgba(255,255,255,.4); --color-glow:rgba(255,255,255,0.8);
+
+      /* Motion accessibility - calm visuals, do not disable animations */
+      @media (prefers-reduced-motion: reduce){
+        .genesis-shockwave, .stardust, .center-ripple{
+          opacity: .6 !important; /* visible but calmer */
+          filter: none !important;
+        }
+      }
+      
+      /* Skip animation control */
+      .skip-animation {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 400;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.3);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        backdrop-filter: blur(5px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      
+      .skip-animation.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      .skip-animation:hover {
+        background: rgba(0,0,0,0.9);
+        border-color: rgba(255,255,255,0.5);
+      }
+      
+      /* Motion toggle is styled as a .nav-button inside #story-navigation */
+      
+      /* Motion-off class calms visuals but continues animation */
+      body.motion-off .genesis-shockwave,
+      body.motion-off .stardust,
+      body.motion-off .center-ripple {
+        opacity: 0.4 !important;
+        filter: none !important;
+      }
+      
+      /* Enhanced node gradients for goal tinting */
+      .node circle.core.goal-ahr { fill: url(#node-gradient-ahr); }
+      .node circle.core.goal-wdp { fill: url(#node-gradient-wdp); }
+      .node circle.core.goal-eee { fill: url(#node-gradient-eee); }
+      .node circle.core.goal-oe { fill: url(#node-gradient-oe); }
+      
+      /* Label improvements */
+      .node text {
+        font-size: 0px;
+        opacity: 0;
+        transition: font-size 0.8s ease, opacity 0.8s ease;
+      }
+      
+      .node text.visible {
+        font-size: 13px;
+        opacity: 1;
+      }
+      
+      .node:hover text, .node:focus text {
+        filter: drop-shadow(0 0 4px rgba(255,255,255,0.6));
+      }
+    
+      /* === Goal vs Root Visual System === */
+      .goal-hub {
+        fill: none;
+        stroke-width: 2px;
+        opacity: 0.55;
+        filter: drop-shadow(0 0 25px rgba(255,255,255,.15));
+      }
+      .goal-hub-halo {
+        fill: none;
+        opacity: .35;
+      }
+      .goal-label {
+        font-family: "Merriweather", serif;
+        font-weight: 900;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        font-size: 14px;
+        fill: #fff;
+        opacity: .85;
+        paint-order: stroke;
+        stroke: rgba(0,0,0,.7);
+        stroke-width: 4px;
+      }
+      /* Root initiatives: white core + colored ring, no goal-like glow */
+      .node.root circle.core {
+        fill: #ffffff !important;
+        stroke-width: 3px !important;
+        filter: none !important;
+      }
+
+      /* 4C ring around nodes */
+      .qc-ring path {
+        opacity: .18;            /* idle */
+        transition: opacity .25s ease, filter .25s ease;
+      }
+      .qc-ring .qc-dot { pointer-events:none; }
+      .qc-ripple {
+        fill:none; stroke-width:2px; opacity:.85;
+        filter: drop-shadow(0 0 6px rgba(255,255,255,.45));
+      }
+
+      /* optional “not-yet-passed” highlight when you add a toggle */
+      .node.needs-check .qc-ring path { opacity:.35; filter:none; }
+
+    </style>
+  </head>
+  <body>
+   <audio id="audio-genesis" preload="auto">
+  <source src="audio-genesis.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+  <svg id="visualization" width="100%" height="100%" style="position:absolute;top:0;left:0;z-index:0;">
+    <defs>
+      <radialGradient id="node-gradient-ahr" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#4dabf7;stop-opacity:0.9" />
+        <stop offset="100%" style="stop-color:#4dabf7;stop-opacity:0.3" />
+      </radialGradient>
+      <radialGradient id="node-gradient-wdp" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#69db7c;stop-opacity:0.9" />
+        <stop offset="100%" style="stop-color:#69db7c;stop-opacity:0.3" />
+      </radialGradient>
+      <radialGradient id="node-gradient-eee" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#ffc078;stop-opacity:0.9" />
+        <stop offset="100%" style="stop-color:#ffc078;stop-opacity:0.3" />
+      </radialGradient>
+      <radialGradient id="node-gradient-oe" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#da77f2;stop-opacity:0.9" />
+        <stop offset="100%" style="stop-color:#da77f2;stop-opacity:0.3" />
+      </radialGradient>
+      <radialGradient id="node-gradient" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:rgba(255,255,255,0.9);stop-opacity:1" />
+        <stop offset="100%" style="stop-color:rgba(255,255,255,0.3);stop-opacity:1" />
+      </radialGradient>
+      <radialGradient id="maroonPulse" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#500000;stop-opacity:0.8" />
+        <stop offset="100%" style="stop-color:#500000;stop-opacity:0.1" />
+      </radialGradient>
+      <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge> 
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <radialGradient id="awakeningNebula" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.06" />
+        <stop offset="60%" style="stop-color:#4dabf7;stop-opacity:0.05" />
+        <stop offset="100%" style="stop-color:#0a1020;stop-opacity:0" />
+      </radialGradient>
+      <radialGradient id="gravityWell" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" style="stop-color:#000814;stop-opacity:0.75" />
+        <stop offset="60%" style="stop-color:#000814;stop-opacity:0.3" />
+        <stop offset="100%" style="stop-color:#000814;stop-opacity:0" />
+      </radialGradient>
+      <radialGradient id="blueprintBackdrop" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" style="stop-color:#0b1e3a;stop-opacity:0.85" />
+        <stop offset="60%" style="stop-color:#0b1e3a;stop-opacity:0.55" />
+        <stop offset="100%" style="stop-color:#0b1e3a;stop-opacity:0" />
+      </radialGradient>
+      <filter id="energyGrid" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" result="noise"/>
+        <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+        <feBlend in="SourceGraphic" in2="mono" mode="screen"/>
+      </filter>
+      <linearGradient id="scanlineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:rgba(80,200,255,0)"/>
+        <stop offset="50%" style="stop-color:rgba(80,200,255,0.25)"/>
+        <stop offset="100%" style="stop-color:rgba(80,200,255,0)"/>
+      </linearGradient>
+      <radialGradient id="singularityFlare" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+        <stop offset="35%" style="stop-color:#dcefff;stop-opacity:0.9" />
+        <stop offset="70%" style="stop-color:#9bd6ff;stop-opacity:0.45" />
+        <stop offset="100%" style="stop-color:#4da6ff;stop-opacity:0" />
+      </radialGradient>
+      <linearGradient id="lensFlareStreak" x1="0%" y1="50%" x2="100%" y2="50%">
+        <stop offset="0%" style="stop-color:rgba(255,255,255,0)"/>
+        <stop offset="50%" style="stop-color:rgba(223,244,255,0.85)"/>
+        <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+      </linearGradient>
+      <radialGradient id="gravityWaveGradient" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:rgba(255,255,255,0)" />
+        <stop offset="68%" style="stop-color:rgba(214,236,255,0)" />
+        <stop offset="78%" style="stop-color:rgba(214,236,255,0.85)" />
+        <stop offset="90%" style="stop-color:rgba(214,236,255,0.45)" />
+        <stop offset="100%" style="stop-color:rgba(214,236,255,0)" />
+      </radialGradient>
+    </defs>
+  </svg>
+  <main id="story-container" aria-labelledby="story-title">
+    <h1 id="story-title">HROE: From Chaos to Clarity</h1>
+    <p id="intro-text"></p>
+    <button id="startButton" class="story-button">Begin the Journey</button>
+  </main>
+
+<div id="narrative-overlay" aria-live="polite" role="region">
+  <h2 class="narrative-title"></h2>
+  <p class="narrative-subtitle"></p>
+</div>
+
+<div id="detail-panel" aria-live="polite" role="dialog" aria-modal="false" hidden>
+  <button class="close-detail" aria-label="Close details">&times;</button>
+  <h3 class="detail-title"></h3>
+  <div class="detail-content"></div>
+</div>
+
+<div id="story-navigation" aria-label="Story navigation controls"></div>
+
+<button id="skip-animation" class="skip-animation" aria-label="Skip to end of current animation">
+  Skip Animation
+</button>
+
+<button id="motion-toggle" class="motion-toggle" aria-label="Toggle motion on/off" style="display:none;">
+  Motion: On
+</button>
+
+<button id="narrative-toggle" class="narrative-toggle" aria-label="Toggle narrative and labels" aria-pressed="true" style="display:none;">
+  Narrative: On
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>(() => {
+  'use strict';
+
+    // Check if D3 loaded successfully
+    if (typeof d3 === 'undefined') {
+      console.error('D3.js failed to load from CDN');
+      document.body.innerHTML = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;font-family:Arial,sans-serif;"><h2>Loading Error</h2><p>Failed to load core visualization library. Please refresh the page.</p></div>';
+    } else {
+    // Global scene pacing
+    const CONFIG = Object.freeze({
+      sceneDurationMs: 15000, // 15s per scene target
+      timingScale: 4.5 // multiplies Genesis animation durations
+    });
+
+    const data = {
+        nodes: [
+          { id: "Performance Management", goal: "AHR", isRoot: true },
+          { id: "Mentoring", goal: "WDP" }, { id: "Career Development", goal: "WDP" },
+          { id: "Succession Planning", goal: "AHR" }, { id: "Talent Management", goal: "OE" },
+          { id: "Leadership", goal: "WDP" }, { id: "Coaching", goal: "WDP" },
+          { id: "Talent Acquisition", goal: "AHR" }, { id: "Onboarding", goal: "EEE" },
+          { id: "Policy", goal: "OE", isRoot: true }, { id: "Processes", goal: "OE" },
+          { id: "Structure", goal: "OE" }, { id: "HR Operation", goal: "OE" },
+          { id: "Automation", goal: "OE" }, { id: "Technology", goal: "OE" },
+          { id: "Innovation & Optimization", goal: "OE" }, { id: "Strategy & Analytics", goal: "OE" },
+          { id: "Employer Branding", goal: "AHR", isRoot: true }, { id: "Executive Search", goal: "OE" },
+          { id: "Community Involvement", goal: "EEE" }, { id: "Training", goal: "WDP" },
+          { id: "Orientation", goal: "EEE" }, { id: "Employee Relations", goal: "OE" },
+          { id: "Benefits", goal: "EEE", isRoot: true }, { id: "Health & Wellness", goal: "EEE" },
+          { id: "Compensation", goal: "AHR" }, { id: "Communication", goal: "EEE" }
+        ],
+        links: [
+          { source: "Performance Management", target: "Mentoring" },
+          { source: "Career Development", target: "Mentoring" },
+          { source: "Performance Management", target: "Succession Planning" },
+          { source: "Performance Management", target: "Talent Acquisition" },
+          { source: "Talent Management", target: "Succession Planning" },
+          { source: "Career Development", target: "Leadership" },
+          { source: "Career Development", target: "Succession Planning" },
+          { source: "Performance Management", target: "Career Development" },
+          { source: "Coaching", target: "Career Development" },
+          { source: "Performance Management", target: "Coaching" },
+          { source: "Talent Acquisition", target: "Onboarding" },
+          { source: "Policy", target: "Processes" },
+          { source: "Policy", target: "Onboarding" },
+          { source: "Policy", target: "Structure" },
+          { source: "Policy", target: "Leadership" },
+          { source: "Processes", target: "HR Operation" },
+          { source: "Processes", target: "Automation" },
+          { source: "Processes", target: "Technology" },
+          { source: "Processes", target: "Strategy & Analytics" },
+          { source: "Technology", target: "Automation" },
+          { source: "Technology", target: "Innovation & Optimization" },
+          { source: "Automation", target: "Innovation & Optimization" },
+          { source: "Innovation & Optimization", target: "Strategy & Analytics" },
+          { source: "Employer Branding", target: "Executive Search" },
+          { source: "Performance Management", target: "Executive Search" },
+          { source: "Employer Branding", target: "Community Involvement" },
+          { source: "Employer Branding", target: "Talent Acquisition" },
+          { source: "Employer Branding", target: "Succession Planning" },
+          { source: "Employer Branding", target: "Leadership" },
+          { source: "Onboarding", target: "Training" },
+          { source: "Onboarding", target: "Orientation" },
+          { source: "Performance Management", target: "Employee Relations" },
+          { source: "Benefits", target: "Health & Wellness" },
+          { source: "Benefits", target: "Compensation" },
+          { source: "Benefits", target: "Talent Acquisition" },
+          { source: "Employer Branding", target: "Communication" },
+          { source: "Leadership", target: "Succession Planning" },
+          { source: "Compensation", target: "Talent Acquisition" }
+        ],
+      };
+
+      const roadmapLanes = {
+        "Talent Lifecycle": [
+          "Employer Branding", "Talent Acquisition", "Executive Search",
+          "Onboarding", "Orientation", "Compensation", "Performance Management"
+        ],
+        "Operational Excellence": [
+          "Policy", "Processes", "Structure", "HR Operation", "Strategy & Analytics",
+          "Technology", "Automation", "Innovation & Optimization"
+        ],
+        "Workforce Development": [
+          "Training", "Leadership", "Coaching", "Mentoring", "Career Development", "Succession Planning"
+        ],
+        "Engagement & Well-Being": [
+          "Benefits", "Health & Wellness", "Employee Relations", "Communication",
+          "Community Involvement", "Talent Management"
+        ]
+      };
+
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      const { width, height } = viewport;
+
+      function createTimerRegistry(groupNames = []) {
+        const groups = Object.fromEntries(groupNames.map(name => [name, []]));
+
+        function safeStop(timer) {
+          if (!timer) return;
+          try {
+            if (timer && typeof timer.stop === 'function' && !timer._stopped) {
+              timer.stop();
+              timer._stopped = true;
+            } else if (typeof timer === 'number') {
+              clearTimeout(timer);
+              clearInterval(timer);
+            }
+          } catch (error) {
+            console.warn('Error stopping timer:', error);
+          }
+        }
+
+        return {
+          add(group, timer) {
+            if (!groups[group]) groups[group] = [];
+            groups[group].push(timer);
+            return timer;
+          },
+          stop(group) {
+            if (!groups[group]) return;
+            groups[group].forEach(safeStop);
+            groups[group] = [];
+          },
+          stopAll() {
+            Object.keys(groups).forEach(group => this.stop(group));
+          },
+          get(group) {
+            return groups[group] ? [...groups[group]] : [];
+          }
+        };
+      }
+
+      function parseTranslate(transform, fallbackX = 0, fallbackY = 0) {
+        if (!transform) return { x: fallbackX, y: fallbackY };
+        const match = /translate\(\s*([-.\d]+)[,\s]+([-.\d]+)\s*\)/.exec(transform);
+        if (!match) return { x: fallbackX, y: fallbackY };
+        const x = Number.parseFloat(match[1]);
+        const y = Number.parseFloat(match[2]);
+        return {
+          x: Number.isFinite(x) ? x : fallbackX,
+          y: Number.isFinite(y) ? y : fallbackY
+        };
+      }
+
+      function selectionPosition(selection, fallbackX = 0, fallbackY = 0) {
+        if (!selection) return { x: fallbackX, y: fallbackY };
+        const isEmpty = typeof selection.empty === 'function' ? selection.empty() : false;
+        if (isEmpty) return { x: fallbackX, y: fallbackY };
+        return parseTranslate(selection.attr('transform'), fallbackX, fallbackY);
+      }
+
+      // Factory function to initialize the viz object with logical groups and comments
+      function createViz() {
+        const timers = createTimerRegistry([
+          'pulse', 'wave', 'rootRay', 'chaos', 'finale', 'shake', 'formation', 'lifecycle', 'catalyst'
+        ]);
+        return {
+          // Simulation state
+          simulation: null,
+          link: null,
+          node: null,
+          currentStepIndex: -1,
+          zoom: null,
+
+          // Animation timers
+          timers,
+
+          // UI state
+          exploreMode: false,
+          autoPlaying: false,
+          autoPlayTimer: null,
+          isHighContrast: false,
+          beforeAfter: "after",
+
+          // Story state
+          storyInitialized: false,
+          genesisTimeline: null,
+          genesisTimelineControls: null,
+          genesisStarting: false, // Flag to prevent multiple Genesis starts
+
+          // Particle bookkeeping
+          activeParticles: []
+        };
+      }
+      let viz = createViz();
+      const registerTimer = (group, timer) => viz.timers.add(group, timer);
+      const stopTimerGroups = (...groups) => {
+        groups.forEach(group => viz.timers.stop(group));
+      };
+      const stopAllTimerGroups = () => viz.timers.stopAll();
+
+      const DOM = {
+        svg: d3.select('#visualization'),
+        startButton: d3.select('#startButton'),
+        introText: d3.select('#intro-text'),
+        storyNav: d3.select('#story-navigation'),
+        narrativeOverlay: d3.select('#narrative-overlay'),
+        detailPanel: d3.select('#detail-panel')
+      };
+      DOM.container = DOM.svg.append('g').attr('class', 'viz-container');
+      DOM.narrativeTitle = DOM.narrativeOverlay.select('.narrative-title');
+      DOM.narrativeSubtitle = DOM.narrativeOverlay.select('.narrative-subtitle');
+      DOM.detailTitle = DOM.detailPanel.select('.detail-title');
+      DOM.detailContent = DOM.detailPanel.select('.detail-content');
+      const {
+        svg,
+        container,
+        startButton,
+        introText,
+        storyNav,
+        narrativeOverlay,
+        narrativeTitle,
+        narrativeSubtitle,
+        detailPanel,
+        detailTitle,
+        detailContent
+      } = DOM;
+
+      const colorScale = d3.scaleOrdinal()
+        .domain(["AHR","WDP","EEE","OE"])
+        .range(["var(--color-ahr)","var(--color-wdp)","var(--color-eee)","var(--color-oe)"]);
+      const goalPositions = {};
+      
+      function buildAdjacency(links) {
+          const adj = {};
+          links.forEach(({source, target}) => {
+              const sourceId = typeof source === 'object' ? source.id : source;
+              const targetId = typeof target === 'object' ? target.id : target;
+              if (!adj[sourceId]) adj[sourceId] = [];
+              if (!adj[targetId]) adj[targetId] = [];
+              adj[sourceId].push(targetId);
+              adj[targetId].push(sourceId);
+          });
+          return adj;
+      }
+      const adjacency = buildAdjacency(data.links);
+
+      const APP = {
+        config: CONFIG,
+        dom: DOM,
+        data,
+        lanes: roadmapLanes,
+        viewport
+      };
+
+      window.APP = APP;
+
+    // === 4C model & color helpers ===
+    const FOURC = [
+      { key:'compliance',  label:'Compliance',            color:'var(--color-4c-compliance)' },
+      { key:'improvement', label:'Continuous Improvement',color:'var(--color-4c-improve)'    },
+      { key:'culture',     label:'Culture',               color:'var(--color-4c-culture)'    },
+      { key:'change',      label:'Change Management',     color:'var(--color-4c-change)'     },
+    ];
+    const fourCColor = k => FOURC.find(c => c.key === k)?.color || '#fff';
+
+    // Attach a 4C segmented ring to each node <g>
+    function attachQualityRings(selection, opts = { radius:12, thickness:3, gap:0.04 }) {
+      const { radius:R, thickness:T, gap } = opts;
+      const arcGen = d3.arc().innerRadius(R).outerRadius(R+T);
+
+      selection.each(function(){
+        const g = d3.select(this);
+        const ring = g.selectAll('.qc-ring').data([0]).join('g')
+          .attr('class','qc-ring')
+          .attr('aria-hidden','true')
+          .style('pointer-events','none')
+          .style('opacity', 0); // reveal later by scene
+
+        // 4 equal wedges around the node
+        FOURC.forEach((c, i) => {
+          const start = (i/4)*Math.PI*2 + gap;
+          const end   = ((i+1)/4)*Math.PI*2 - gap;
+          ring.append('path')
+            .attr('class', `qc-seg qc-${c.key}`)
+            .attr('d', arcGen({ startAngle:start, endAngle:end }))
+            .style('fill', c.color);
+
+          // small dot just outside the ring (nice affordance)
+          const mid = (start+end)/2;
+          ring.append('circle')
+            .attr('class', `qc-dot qc-${c.key}`)
+            .attr('r', 1.8)
+            .attr('cx', Math.cos(mid)*(R+T+3))
+            .attr('cy', Math.sin(mid)*(R+T+3))
+            .style('fill', c.color)
+            .style('opacity', 0.0);
+        });
+      });
+    }
+
+    // Make rings visible (e.g., end of Alignment / start of Blueprint)
+    function revealQualityRings(alpha=1, ms=600) {
+      viz?.node?.selectAll('.qc-ring')
+        .transition().duration(ms).style('opacity', alpha);
+    }
+
+    // Sequentially “stamp” the 4 C’s on a single node
+    function runQualitySequenceForNodeId(nodeId, delayBetween=450) {
+      const g = viz.node.filter(d => d.id === nodeId);
+      const ring = g.select('.qc-ring');
+      if (!ring.node()) return;
+
+      // draw a soft ripple at the node center on each check
+      function ripple(color, delay) {
+        ring.append('circle')
+          .attr('class','qc-ripple')
+          .attr('cx', 0).attr('cy', 0).attr('r', 0)
+          .style('stroke', color)
+          .transition().delay(delay).duration(520).ease(d3.easeCubicOut)
+          .attr('r', 20).style('opacity', 0).remove();
+      }
+
+      // light each segment then settle
+      FOURC.forEach((c, i) => {
+        const seg = ring.select(`.qc-${c.key}`);
+        const dot = ring.select(`.qc-dot.qc-${c.key}`);
+        const at = i * delayBetween;
+        const resolvedColor = getComputedStyle(document.documentElement).getPropertyValue(c.color.replace('var(','').replace(')','')).trim() || c.color;
+
+        seg.transition().delay(at).duration(330)
+          .style('opacity', 0.95)
+          .transition().duration(680)
+          .style('opacity', 0.6);
+
+        dot.transition().delay(at).duration(280).style('opacity', 0.9)
+           .transition().duration(500).style('opacity', 0.35);
+
+        ripple(resolvedColor, at);
+      });
+    }
+
+
+      function computeGoalPositions(){
+        const m = Math.min(width, height);
+        const pad = m * 0.18; // generous margin
+        goalPositions['AHR'] = { x: pad,         y: pad };
+        goalPositions['WDP'] = { x: width-pad,   y: pad };
+        goalPositions['EEE'] = { x: pad,         y: height - pad };
+        goalPositions['OE']  = { x: width - pad, y: height - pad };
+      }
+
+      // Narrative/Labels visibility helper
+      function setLabelVisibility(on){
+        if (!viz.node) return;
+        viz.node.selectAll('text').classed('visible', !!on)
+          .style('opacity', on ? 1 : 0)
+          .style('font-size', on ? '13px' : '0px');
+      }
+
+      function setupNarrativeToggle(){
+        const btn = document.getElementById('narrative-toggle');
+        if(!btn) return;
+        btn.addEventListener('click', ()=>{
+          // toggle class; when class present, narrative is off
+          const hadOff = document.body.classList.contains('narrative-off');
+          document.body.classList.toggle('narrative-off', !hadOff);
+          const on = !document.body.classList.contains('narrative-off');
+          btn.textContent = `Narrative: ${on ? 'On' : 'Off'}`;
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          // Labels no longer tied to narrative; scenes control visibility explicitly.
+        });
+      }
+    
+      // Enhanced timing system for Genesis motion grammar — spec aligned
+      const GENESIS_TIMING = {
+        singularity: 200,    // 0.1–0.3s still moment
+        shockwave: 1000,     // 0.75–1.2s shockwave
+        expansion: 1000,     // 0.8–1.2s expansion
+        drift: 3000,         // sustained drift window before idle
+        labelFadeIn: 1200    // labels fade-in around 1.2s
+      };
+    
+      // Reduced motion timing (40-60% of normal duration)
+      const GENESIS_TIMING_REDUCED = {
+        singularity: 120,
+        shockwave: 600,
+        expansion: 600,
+        drift: 1500,
+        labelFadeIn: 600
+      };
+    
+      const RHYTHM = {
+        beat: 500,
+        beats: (n) => 500 * n,
+        ease: { io: d3.easeCubicInOut, o: d3.easeCubicOut, i: d3.easeCubicIn, s: d3.easeSinInOut, bounce: d3.easeBackOut }
+      };
+    
+      // Enhanced dur function with Genesis-specific timings; numeric calls stay scene-paced
+      const dur = (phase) => {
+        const isReduced = prefersReducedMotion();
+
+        if (typeof phase === 'string') {
+          const timing = isReduced ? GENESIS_TIMING_REDUCED : GENESIS_TIMING;
+          const baseDuration = timing[phase] || RHYTHM.beat;
+          return Math.max(1, Math.round(baseDuration * CONFIG.timingScale));
+        }
+
+        let baseDuration = RHYTHM.beat;
+        if (typeof phase === 'number' && Number.isFinite(phase)) {
+          baseDuration = RHYTHM.beat * phase;
+        }
+
+        if (isReduced) {
+          baseDuration *= 0.65;
+        }
+
+        return Math.max(1, Math.round(baseDuration));
+      };
+    
+      // Simple noise function for organic expansion
+      function simpleNoise(x, y, scale = 0.01) {
+        const n = Math.sin(x * scale) * Math.cos(y * scale) + 
+                  Math.sin(x * scale * 2.1) * Math.cos(y * scale * 1.7) * 0.5 +
+                  Math.sin(x * scale * 4.3) * Math.cos(y * scale * 3.9) * 0.25;
+        return n * 0.5 + 0.5; // normalize to 0-1
+      }
+    
+      // Halton low-discrepancy sequence helper for organic scatter
+      function halton(index, base) {
+        let result = 0;
+        let f = 1 / base;
+        let i = index;
+        while (i > 0) {
+          result += f * (i % base);
+          i = Math.floor(i / base);
+          f /= base;
+        }
+        return result;
+      }
+    
+      // Enhanced skip logic with forceMotion override
+      const url = new URL(location.href);
+      const forceMotion = url.searchParams.get('motion') === 'on';
+      const skipParam = url.searchParams.get('skip') === '1';
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const isMotionToggleOff = () => document.body.classList.contains('motion-off');
+      const prefersReducedMotion = () => reduce && !forceMotion;
+      const isMotionSuppressed = () => prefersReducedMotion() || isMotionToggleOff();
+    
+      // Always animate regardless of reduced-motion or motion toggle; only skip via explicit URL param
+      const shouldSkipAnimations = skipParam;
+    
+      // Console diagnostics
+      console.info('Motion Settings:', {
+        reduce,
+        skipParam,
+        forceMotion,
+        decidedSkip: shouldSkipAnimations,
+        config: APP.config
+      });
+    
+      if (shouldSkipAnimations) {
+        console.info('Skipping Genesis animations due to: URL skip parameter');
+      }
+
+      // --- Story steps ---
+      
+      const STORY_STEPS = Object.freeze([
+        {
+          title: "The Cosmos",
+          action: () => {
+            setNarrative("The Cosmos", "In the beginning, HR was a chaotic cosmos—disconnected priorities, isolated efforts, and abundant energy without cohesion.");
+            startGenesisSafely(); 
+            // Reveal links after the constellation forms
+            setTimeout(() => {
+                viz.link.transition().duration(dur(3)).style("stroke-opacity", 0.15);
+            }, dur('drift') + dur('expansion'));
+          },
+        },
+        {
+          title: "The Anchors",
+          action: () => {
+            setNarrative("The Anchors", "A stabilizing force emerged. Strategic goals now serve as the anchors of our transformation, bringing order to the chaos.");
+            stopTimerGroups('formation');
+            if(viz.simulation) {
+              viz.simulation.stop();
+              data.nodes.forEach(n => { n.fx = null; n.fy = null; });
+            }
+            
+            svg.transition().duration(dur(1.5)).ease(RHYTHM.ease.io).call(viz.zoom.transform, d3.zoomIdentity);
+            
+            const hubsData = Object.entries(goalPositions);
+            const hubRadius = Math.min(width, height) * 0.11;
+            const haloRadius = Math.min(width, height) * 0.14;
+
+            container.selectAll(".goal-hub, .goal-hub-halo, .goal-label").remove();
+            
+            const hubs = container.selectAll(".goal-hub").data(hubsData, d => d[0]);
+            hubs.enter()
+              .append("circle").attr("class", "goal-hub")
+              .attr("cx", d => d[1].x).attr("cy", d => d[1].y).attr("r", 0)
+              .attr("stroke", d => colorScale(d[0]))
+              .transition().duration(900).attr("r", hubRadius);
+
+            container.selectAll(".goal-hub-halo").data(hubsData, d => d[0]).enter()
+              .append("circle").attr("class", "goal-hub-halo")
+              .attr("cx", d => d[1].x).attr("cy", d => d[1].y).attr("r", 0)
+              .style("stroke", d => colorScale(d[0])).style("stroke-width", 24)
+              .style("filter", "url(#softGlow)")
+              .transition().duration(1200).attr("r", haloRadius);
+
+            container.selectAll(".goal-label").data(hubsData, d => d[0]).enter()
+              .append("text").attr("class", "goal-label")
+              .attr("x", d => d[1].x).attr("y", d => d[1].y - haloRadius - 10)
+              .attr("text-anchor", "middle").text(d => d[0].replace(' ', '\n'));
+
+            viz.node.selectAll("circle.core").transition().duration(dur(3))
+              .style("fill", d => d.isRoot ? "#ffffff" : colorScale(d.goal))
+              .style("stroke", d => d.isRoot ? colorScale(d.goal) : null);
+            
+            setTimeout(() => {
+              if (!viz.simulation) return;
+              viz.simulation
+                .force("charge", d3.forceManyBody().strength(-50))
+                .force("x", d3.forceX(d => goalPositions[d.goal].x).strength(0.1))
+                .force("y", d3.forceY(d => goalPositions[d.goal].y).strength(0.1))
+                .alpha(1).restart();
+              startGoalWaves();
+            }, dur(1.5));
+          },
+        },
+        {
+          title: "The Lifecycle",
+          action: () => {
+            setNarrative("The Lifecycle", "These goals form a continuous, cyclical rhythm—the natural lifecycle of HR, where each phase feeds the next.");
+            if(viz.simulation) viz.simulation.stop();
+            container.selectAll(".goal-hub, .goal-hub-halo, .goal-label, .goal-wave").remove();
+            stopTimerGroups('wave');
+
+            viz.node.interrupt().transition().duration(dur(3)).ease(RHYTHM.ease.io)
+              .attr("transform", d => {
+                  const [x,y] = getRoadmapPosition(d.id);
+                  d.x = x; d.y = y;
+                  return `translate(${x},${y})`;
+              })
+              .on("end", () => {
+                data.nodes.forEach(d => {
+                    const [x,y] = getRoadmapPosition(d.id);
+                    d.fx = x; d.fy = y;
+                });
+                drawOrbitalLifecycles();
+                layoutLabels();
+                revealLabels();
+              });
+             
+             viz.link.interrupt().transition().duration(dur(3)).ease(RHYTHM.ease.io)
+                .attr("x1", d => getRoadmapPosition(d.source.id)[0])
+                .attr("y1", d => getRoadmapPosition(d.source.id)[1])
+                .attr("x2", d => getRoadmapPosition(d.target.id)[0])
+                .attr("y2", d => getRoadmapPosition(d.target.id)[1]);
+          },
+        },
+        {
+          title: "The Roadmap",
+          action: () => {
+            setNarrative("The Roadmap", "The integrated roadmap is now our flight path, enabling us to move forward with clarity and confidence.");
+            animateLifecycleFlow();
+            enableExploreMode(true);
+            viz.node.on('click.blueprint', (event, d) => { event.stopPropagation(); showDetail(d); });
+            revealQualityRings(1, 600);
+          },
+        },
+      ]);
+      
+      // ... rest of the script
+      
+      function setNarrative(title, subtitle) {
+        narrativeTitle.text(title);
+        narrativeSubtitle.text(subtitle);
+      }
+      
+      function startGenesisSafely() {
+        // This is a placeholder for your actual function
+        console.log("Starting Genesis animation...");
+      }
+
+      function getRoadmapPosition(nodeId) {
+        // This is a placeholder for your actual function
+        const laneName = Object.keys(roadmapLanes).find(lane => roadmapLanes[lane].includes(nodeId));
+        const laneIndex = Object.keys(roadmapLanes).indexOf(laneName);
+        const nodeIndex = roadmapLanes[laneName].indexOf(nodeId);
+        const x = 200 + laneIndex * 200;
+        const y = 100 + nodeIndex * 50;
+        return [x, y];
+      }
+
+      function drawOrbitalLifecycles() {
+        console.log("Drawing orbital lifecycles...");
+      }
+
+      function layoutLabels() {
+        console.log("Layout labels...");
+      }
+
+      function revealLabels() {
+        console.log("Revealing labels...");
+      }
+
+      function animateLifecycleFlow() {
+        console.log("Animating lifecycle flow...");
+      }
+
+      function enableExploreMode(enable) {
+        console.log("Explore mode:", enable);
+      }
+
+      function showDetail(d) {
+        console.log("Showing detail for:", d.id);
+        detailPanel.attr('hidden', null);
+        detailTitle.text(d.id);
+        detailContent.text(`Details about ${d.id} would be shown here.`);
+      }
+
+      function startGoalWaves() {
+        console.log("Starting goal waves...");
+      }
+
+      // --- Init ---
+      computeGoalPositions();
+      
+      // This is a simplified story progression for demonstration
+      let currentStep = -1;
+      function nextStep() {
+        currentStep++;
+        if (currentStep < STORY_STEPS.length) {
+          STORY_STEPS[currentStep].action();
+        } else {
+          console.log("End of story.");
+        }
+      }
+      
+      startButton.on('click', () => {
+          d3.select('#story-container').transition().duration(500).style('opacity', 0).on('end', function() {
+              d3.select(this).style('display', 'none');
+              storyNav.style('opacity', 1).style('visibility', 'visible');
+              nextStep(); // Start with the first step
+          });
+      });
+      
+      // A simple next button for demonstration
+      storyNav.append('button')
+        .attr('class', 'nav-button')
+        .text('Next Scene')
+        .on('click', nextStep);
+
+      // Close detail panel
+      detailPanel.select('.close-detail').on('click', () => {
+        detailPanel.attr('hidden', true);
+      });
+
+    } // end of D3 check
+})();
+</script>
+</body>
+</html>
