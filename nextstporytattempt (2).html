@@ -439,9 +439,13 @@ function buildLifecycleNodes(lanes, meta, orbitStep=120, baseOrbit=140){
   const all = new Set(); laneNames.forEach(ln => lanes[ln].forEach(x => all.add(x)));
   return [...all].map(name=>{
     const lane = laneNames.find(ln => lanes[ln].includes(name));
+    if (typeof lane === "undefined") {
+      // Optionally log a warning here, or skip the node
+      return null;
+    }
     const phaseIndex = lanes[lane].indexOf(name);
     return { id:name, ...meta[name], lane, phaseIndex, orbitRadius: orbitByLane[lane] };
-  });
+  }).filter(x => x !== null);
 }
 
 function buildLaneFlowLinks(lanes, {bidirectional=false}={}){
