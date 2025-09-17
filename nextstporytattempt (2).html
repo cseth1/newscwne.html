@@ -74,9 +74,6 @@
       .blueprint-grid line{
         stroke:var(--color-blueprint-grid);stroke-width:1px;stroke-dasharray:4 4;
       }
-      /* Directed dependency flow (Anchors only) */
-      @keyframes flowDir{from{stroke-dashoffset:0}to{stroke-dashoffset:-28}}
-      .link.directed{stroke-dasharray:6 8;animation:flowDir 2.2s linear infinite}
       #story-container{
         position:relative;margin:8vh auto 0; width:90%;max-width:750px;
         background:rgba(10,15,24,.8);border-radius:20px;padding:50px 60px;text-align:center;z-index:200;
@@ -149,7 +146,7 @@
       .nav-button.primary{background:rgba(255,255,255,.1);}
 
       /* High-contrast toggle */
-      body.high-contrast{--color-bg: #000; --color-text:#fff; --color-text-muted:#f0f0f0; --color-blueprint-grid:rgba(150,200,255,.6); --color-link:rgba(255,255,255,.4); --color-glow:rgba(255,255,255,0.8);
+      body.high-contrast{--color-bg: #000; --color-text:#fff; --color-text-muted:#f0f0f0; --color-blueprint-grid:rgba(150,200,255,.6); --color-link:rgba(255,255,255,.4); --color-glow:rgba(255,255,255,0.8);}
 
       /* Motion accessibility - calm visuals, do not disable animations */
       @media (prefers-reduced-motion: reduce){
@@ -395,7 +392,7 @@
       timingScale: 4.5 // multiplies Genesis animation durations
     });
 
-    const data = {
+    let data = {
         nodes: [
           { id: "Performance Management", goal: "AHR", isRoot: true },
           { id: "Mentoring", goal: "WDP" }, { id: "Career Development", goal: "WDP" },
@@ -412,46 +409,7 @@
           { id: "Benefits", goal: "EEE", isRoot: true }, { id: "Health & Wellness", goal: "EEE" },
           { id: "Compensation", goal: "AHR" }, { id: "Communication", goal: "EEE" }
         ],
-        links: [
-          { source: "Performance Management", target: "Mentoring" },
-          { source: "Career Development", target: "Mentoring" },
-          { source: "Performance Management", target: "Succession Planning" },
-          { source: "Performance Management", target: "Talent Acquisition" },
-          { source: "Talent Management", target: "Succession Planning" },
-          { source: "Career Development", target: "Leadership" },
-          { source: "Career Development", target: "Succession Planning" },
-          { source: "Performance Management", target: "Career Development" },
-          { source: "Coaching", target: "Career Development" },
-          { source: "Performance Management", target: "Coaching" },
-          { source: "Talent Acquisition", target: "Onboarding" },
-          { source: "Policy", target: "Processes" },
-          { source: "Policy", target: "Onboarding" },
-          { source: "Policy", target: "Structure" },
-          { source: "Policy", target: "Leadership" },
-          { source: "Processes", target: "HR Operation" },
-          { source: "Processes", target: "Automation" },
-          { source: "Processes", target: "Technology" },
-          { source: "Processes", target: "Strategy & Analytics" },
-          { source: "Technology", target: "Automation" },
-          { source: "Technology", target: "Innovation & Optimization" },
-          { source: "Automation", target: "Innovation & Optimization" },
-          { source: "Innovation & Optimization", target: "Strategy & Analytics" },
-          { source: "Employer Branding", target: "Executive Search" },
-          { source: "Performance Management", target: "Executive Search" },
-          { source: "Employer Branding", target: "Community Involvement" },
-          { source: "Employer Branding", target: "Talent Acquisition" },
-          { source: "Employer Branding", target: "Succession Planning" },
-          { source: "Employer Branding", target: "Leadership" },
-          { source: "Onboarding", target: "Training" },
-          { source: "Onboarding", target: "Orientation" },
-          { source: "Performance Management", target: "Employee Relations" },
-          { source: "Benefits", target: "Health & Wellness" },
-          { source: "Benefits", target: "Compensation" },
-          { source: "Benefits", target: "Talent Acquisition" },
-          { source: "Employer Branding", target: "Communication" },
-          { source: "Leadership", target: "Succession Planning" },
-          { source: "Compensation", target: "Talent Acquisition" }
-        ],
+        links: []
       };
 
       const roadmapLanes = {
@@ -471,6 +429,102 @@
           "Community Involvement", "Talent Management"
         ]
       };
+
+// --- Build lifecycle-first nodes and links ---
+const nodeMeta = Object.fromEntries(data.nodes.map(n => [n.id, { goal: n.goal, isRoot: n.isRoot }]));
+
+function buildLifecycleNodes(lanes, meta, orbitStep=120, baseOrbit=140){
+  const laneNames = Object.keys(lanes);
+  const orbitByLane = Object.fromEntries(laneNames.map((ln,i)=>[ln, baseOrbit + i*orbitStep]));
+  const all = new Set(); laneNames.forEach(ln => lanes[ln].forEach(x => all.add(x)));
+  return [...all].map(name=>{
+    const lane = laneNames.find(ln => lanes[ln].includes(name));
+    const phaseIndex = lanes[lane].indexOf(name);
+    return { id:name, ...meta[name], lane, phaseIndex, orbitRadius: orbitByLane[lane] };
+  });
+}
+
+function buildLaneFlowLinks(lanes, {bidirectional=false}={}){
+  const links = [];
+  for (const [laneName, items] of Object.entries(lanes)) {
+    for (let i=0;i<items.length-1;i++){
+      const a = items[i], b = items[i+1];
+      links.push({ source:a, target:b, type:"lane", lane:laneName });
+      if (bidirectional) links.push({ source:b, target:a, type:"lane", lane:laneName });
+    }
+  }
+  return links;
+}
+
+// Optional narrative bridges (keep small and intentional)
+const crossLaneBridges = [
+  { source:"Performance Management", target:"Career Development", type:"bridge" },
+  { source:"Performance Management", target:"Training", type:"bridge" },
+  { source:"Policy", target:"Onboarding", type:"bridge" },
+  { source:"Benefits", target:"Employer Branding", type:"bridge" }
+];
+
+// Rebuild data lifecycle-first
+const lifecycleNodes = buildLifecycleNodes(roadmapLanes, nodeMeta);
+const lifecycleLinks = [...buildLaneFlowLinks(roadmapLanes), ...crossLaneBridges];
+data = { nodes: lifecycleNodes, links: lifecycleLinks };
+
+viz.simulation = d3.forceSimulation(data.nodes)
+  .force("link", d3.forceLink(data.links).id(d=>d.id).distance(d=> d.type==="bridge" ? 160 : 90).strength(d=> d.type==="bridge" ? 0.2 : 0.6))
+  .force("charge", d3.forceManyBody().strength(-40))
+  .force("center", d3.forceCenter(width/2, height/2));
+
+
+function applyLifecycleForces(sim, nodes){
+  sim.force("radial", d3.forceRadial(d=>d.orbitRadius, width/2, height/2).strength(0.6));
+
+  const TWO_PI = Math.PI*2;
+  const counts = {}; nodes.forEach(n => counts[n.lane]=(counts[n.lane]||0)+1);
+  function angularNudge(alpha){
+    for (const n of nodes){
+      const cnt = counts[n.lane]||1;
+      const theta = (n.phaseIndex/Math.max(1,cnt))*TWO_PI;
+      const tx = Math.cos(theta)*n.orbitRadius + width/2;
+      const ty = Math.sin(theta)*n.orbitRadius + height/2;
+      n.vx += (tx - (n.x||0)) * 0.002 * alpha;
+      n.vy += (ty - (n.y||0)) * 0.002 * alpha;
+    }
+  }
+  angularNudge.initialize = _=>{};
+  sim.on("tick.angular", ()=> angularNudge(sim.alpha()));
+}
+applyLifecycleForces(viz.simulation, data.nodes);
+
+viz.link = container.selectAll(".link").data(data.links).join("line")
+  .attr("class", d => `link ${d.type==="bridge" ? "bridge" : "lane"}`)
+  .style("stroke-opacity", d => d.type==="bridge" ? 0.25 : 0.5)
+  .style("stroke-dasharray", d => d.type==="bridge" ? "4 6" : null);
+
+viz.node = container.selectAll(".node").data(data.nodes).join(enter=>{
+  const g = enter.append("g").attr("class", d => `node ${d.isRoot ? "root":""}`)
+    .attr("tabindex", 0);
+
+  g.append("circle").attr("class","core")
+    .attr("r", d=> d.isRoot ? 12 : 9)
+    .attr("fill","url(#node-gradient)")
+    .classed("goal-ahr", d=>d.goal==="AHR")
+    .classed("goal-wdp", d=>d.goal==="WDP")
+    .classed("goal-eee", d=>d.goal==="EEE")
+    .classed("goal-oe",  d=>d.goal==="OE");
+
+  g.append("text").attr("dy", 22).text(d=>d.id);
+
+  attachQualityRings(g, { radius:12, thickness:3, gap:0.05 }); // already defined in file
+  return g;
+});
+
+viz.simulation.on("tick", ()=>{
+  viz.link
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+  viz.node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
 
       const viewport = {
         width: window.innerWidth,
@@ -607,20 +661,6 @@
         .range(["var(--color-ahr)","var(--color-wdp)","var(--color-eee)","var(--color-oe)"]);
       const goalPositions = {};
       
-      function buildAdjacency(links) {
-          const adj = {};
-          links.forEach(({source, target}) => {
-              const sourceId = typeof source === 'object' ? source.id : source;
-              const targetId = typeof target === 'object' ? target.id : target;
-              if (!adj[sourceId]) adj[sourceId] = [];
-              if (!adj[targetId]) adj[targetId] = [];
-              adj[sourceId].push(targetId);
-              adj[targetId].push(sourceId);
-          });
-          return adj;
-      }
-      const adjacency = buildAdjacency(data.links);
-
       const APP = {
         config: CONFIG,
         dom: DOM,
@@ -958,49 +998,111 @@
       }
       
       function startGenesisSafely() {
-        // This is a placeholder for your actual function
-        console.log("Starting Genesis animation...");
+        console.log("startGenesisSafely called (no-op).");
       }
 
-      function getRoadmapPosition(nodeId) {
-        // This is a placeholder for your actual function
-        const laneName = Object.keys(roadmapLanes).find(lane => roadmapLanes[lane].includes(nodeId));
-        const laneIndex = Object.keys(roadmapLanes).indexOf(laneName);
-        const nodeIndex = roadmapLanes[laneName].indexOf(nodeId);
-        const x = 200 + laneIndex * 200;
-        const y = 100 + nodeIndex * 50;
-        return [x, y];
+      function getRoadmapPosition(nodeId){
+        const n = data.nodes.find(x=>x.id===nodeId);
+        if(!n) return [width/2,height/2];
+        const cnt = data.nodes.filter(x=>x.lane===n.lane).length || 1;
+        const t = (n.phaseIndex/Math.max(1,cnt)) * Math.PI*2;
+        return [Math.cos(t)*n.orbitRadius + width/2, Math.sin(t)*n.orbitRadius + height/2];
       }
 
       function drawOrbitalLifecycles() {
-        console.log("Drawing orbital lifecycles...");
+        const uniqueOrbits = [...new Set(data.nodes.map(d => d.orbitRadius))].sort((a,b) => a-b);
+        const laneNameByRadius = {};
+        data.nodes.forEach(node => {
+            if (!laneNameByRadius[node.orbitRadius]) {
+                laneNameByRadius[node.orbitRadius] = node.lane;
+            }
+        });
+
+        const orbitData = uniqueOrbits.map(radius => ({
+            radius,
+            name: laneNameByRadius[radius]
+        }));
+
+        container.selectAll(".orbit-ring, .orbit-label").remove();
+
+        container.selectAll(".orbit-ring")
+            .data(orbitData)
+            .join("circle")
+            .attr("class", "orbit-ring")
+            .attr("cx", width / 2)
+            .attr("cy", height / 2)
+            .attr("r", d => d.radius)
+            .style("fill", "none")
+            .style("stroke", "rgba(255,255,255,0.1)")
+            .style("stroke-width", 1)
+            .style("stroke-dasharray", "2 4");
+
+        container.selectAll(".orbit-label")
+            .data(orbitData)
+            .join("text")
+            .attr("class", "orbit-label")
+            .attr("x", width / 2)
+            .attr("y", d => height / 2 - d.radius - 10)
+            .attr("text-anchor", "middle")
+            .style("fill", "rgba(255,255,255,0.4)")
+            .style("font-size", "12px")
+            .text(d => d.name);
       }
 
       function layoutLabels() {
-        console.log("Layout labels...");
+        // The simulation tick handler manages layout.
+        console.log("layoutLabels called.");
       }
 
       function revealLabels() {
-        console.log("Revealing labels...");
+        setLabelVisibility(true);
       }
 
       function animateLifecycleFlow() {
-        console.log("Animating lifecycle flow...");
+        stopTimerGroups('lifecycle'); // Clear any existing timers
+        const laneLinks = viz.link.filter(d => d.type === 'lane').data();
+        const linksByLane = d3.group(laneLinks, d => d.lane);
+
+        let baseDelay = 0;
+        for (const [laneName, links] of linksByLane.entries()) {
+            links.sort((a, b) => a.source.phaseIndex - b.source.phaseIndex);
+            links.forEach((link, i) => {
+                registerTimer('lifecycle', d3.timeout(() => {
+                    d3.select(viz.link.nodes()[link.index])
+                        .transition("flow").duration(250)
+                        .style('stroke-width', '3.5px')
+                        .style('stroke-opacity', 0.95)
+                        .transition("flow-fade").duration(400)
+                        .style('stroke-width', '1.5px')
+                        .style('stroke-opacity', d => d.type === "bridge" ? 0.25 : 0.5);
+                }, baseDelay + i * 200));
+            });
+            baseDelay += (links.length + 2) * 200;
+        }
       }
 
       function enableExploreMode(enable) {
-        console.log("Explore mode:", enable);
+        viz.exploreMode = enable;
+        console.log(`Explore mode ${enable ? 'enabled' : 'disabled'}.`);
+        if(enable) {
+            viz.node.style('cursor', 'pointer');
+        } else {
+            viz.node.style('cursor', 'default');
+        }
       }
 
       function showDetail(d) {
-        console.log("Showing detail for:", d.id);
         detailPanel.attr('hidden', null);
         detailTitle.text(d.id);
-        detailContent.text(`Details about ${d.id} would be shown here.`);
+
+        const content = `<strong>Goal:</strong> ${d.goal}<br>
+                         <strong>Lane:</strong> ${d.lane}<br>
+                         <strong>Phase:</strong> ${d.phaseIndex + 1}`;
+        detailContent.html(content);
       }
 
       function startGoalWaves() {
-        console.log("Starting goal waves...");
+        console.log("startGoalWaves called (no-op).");
       }
 
       // --- Init ---
